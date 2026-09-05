@@ -1,0 +1,323 @@
+/* ============================================
+   LIKHA CAFE POS - TABLET STYLES
+   Optimized for iPad & tablets
+   ============================================ */
+
+/* ---------- Landscape (Default) ---------- */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .menu-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .cart-panel.open {
+    height: 40%;
+  }
+  
+  .page-container {
+    padding: 0.75rem 1rem 1rem 1rem;
+  }
+}
+
+/* ---------- Mobile Phones (< 768px) ---------- */
+@media (max-width: 767px) {
+  /* Header */
+  .app-header {
+    padding: 0.5rem 0.85rem;
+    height: 54px;
+  }
+  
+  .brand-name {
+    font-size: 1.15rem;
+  }
+  
+  .brand-sub {
+    font-size: 0.8rem;
+  }
+  
+  .header-time,
+  .staff-info span {
+    display: none;
+  }
+
+  .order-counter {
+    font-size: 0.78rem;
+    padding: 0.25rem 0.6rem;
+  }
+
+  /* App Layout & Bottom Navigation Bar */
+  .app-content {
+    flex-direction: column;
+    padding-bottom: 62px;
+  }
+
+  .sidebar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 60px;
+    background: var(--brown-900);
+    border-top: 1.5px solid var(--brown-800);
+    border-right: none;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 0.5rem;
+    z-index: 90;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.2);
+  }
+
+  .nav-item {
+    width: auto;
+    height: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    background: none;
+    border-radius: 0;
+    padding: 0.35rem 0;
+    color: var(--brown-400);
+    font-size: 0.68rem;
+    font-weight: 600;
+  }
+
+  .nav-item i {
+    font-size: 1.15rem;
+  }
+
+  .nav-item.active {
+    color: var(--yellow-400);
+    background: none;
+    border-top: 3px solid var(--yellow-400);
+  }
+
+  .nav-badge {
+    top: 6px;
+    right: calc(50% - 18px);
+  }
+
+  .page-container {
+    padding: 0.65rem 0.75rem 1rem;
+    overflow-y: auto;
+  }
+
+  /* POS Layout on Mobile Phones */
+  .pos-layout {
+    flex-direction: column;
+    gap: 1rem;
+    height: auto;
+  }
+
+  .pos-menu-section {
+    flex: 1;
+    width: 100%;
+  }
+
+  .pos-order-sidebar {
+    width: 100%;
+    min-width: 100%;
+    max-height: 480px;
+    border-radius: var(--radius);
+    border: 1.5px solid var(--brown-200);
+    margin-top: 0.5rem;
+  }
+
+  .menu-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.65rem;
+  }
+
+  .menu-card {
+    padding: 0.65rem;
+  }
+
+  .menu-card .item-image {
+    height: 90px;
+  }
+
+  .menu-card .item-name {
+    font-size: 0.88rem;
+  }
+
+  .menu-card .item-desc {
+    font-size: 0.72rem;
+  }
+
+  .menu-card .item-price {
+    font-size: 0.95rem;
+  }
+
+  .category-filter-scroll {
+    gap: 0.4rem;
+    padding-bottom: 0.35rem;
+  }
+
+  .filter-btn {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.78rem;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .page-header h2 {
+    font-size: 1.2rem;
+  }
+
+  .search-box {
+    width: 100%;
+  }
+
+  .search-box input {
+    width: 100%;
+    font-size: 0.88rem;
+  }
+
+  /* Admin & Analytics on Mobile */
+  .admin-tabs {
+    gap: 0.35rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
+
+  .admin-tab {
+    padding: 0.45rem 0.85rem;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  .admin-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .analytics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.65rem;
+  }
+
+  .stat-card {
+    padding: 0.85rem;
+  }
+
+  .stat-value {
+    font-size: 1.2rem;
+  }
+
+  .analytics-breakdowns {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+
+  /* Modals on Mobile */
+  .modal {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal-content {
+    max-width: 100%;
+    width: 100%;
+    border-radius: 20px 20px 0 0;
+    max-height: 90vh;
+    margin: 0;
+  }
+
+  .modal-header {
+    padding: 1rem 1.25rem;
+  }
+
+  .modal-body {
+    padding: 1rem 1.25rem;
+  }
+
+  .modal-footer {
+    padding: 0.85rem 1.25rem;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  /* Login on Mobile */
+  .login-container {
+    width: 100%;
+    max-width: 360px;
+    padding: 1.5rem 1.25rem;
+    margin: 1rem;
+  }
+}
+
+/* ---------- iPad Mini & Small Tablets ---------- */
+@media (min-width: 768px) and (max-width: 820px) {
+  .menu-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ---------- Large Tablets / Small Laptops ---------- */
+@media (min-width: 1025px) {
+  .menu-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ---------- Touch Optimization ---------- */
+@media (hover: none) {
+  .menu-card:hover {
+    transform: none;
+  }
+  
+  .btn-primary:hover,
+  .btn-success:hover {
+    transform: none;
+  }
+  
+  .menu-card:active {
+    transform: scale(0.96);
+  }
+  
+  button:active {
+    transform: scale(0.94);
+  }
+}
+
+/* ---------- Safe Area for Notched iPads ---------- */
+@supports (padding: max(0px)) {
+  .app-header {
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+    padding-left: max(1.5rem, env(safe-area-inset-left));
+    padding-right: max(1.5rem, env(safe-area-inset-right));
+  }
+  
+  .cart-panel {
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+  }
+}
+
+/* ---------- High DPI Screens ---------- */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .menu-card .item-image {
+    background: var(--brown-100);
+  }
+}
+
+/* ---------- Reduced Motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,100 @@
+/* ============================================
+   LIKHA CAFE POS - PRINT STYLES
+   For receipt printing
+   ============================================ */
+
+@media print {
+  /* Hide all UI elements */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Only show receipt */
+  #receipt,
+  #receipt * {
+    visibility: visible;
+  }
+  
+  #receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    padding: 8px 10px;
+    font-size: 10pt;
+    font-family: 'Courier New', monospace;
+    background: white;
+    color: black;
+  }
+  
+  /* Receipt Styles */
+  .receipt-header {
+    text-align: center;
+    border-bottom: 1px dashed #000;
+    padding-bottom: 6px;
+    margin-bottom: 6px;
+  }
+  
+  .receipt-header h2 {
+    font-size: 16pt;
+    margin: 0;
+    font-weight: bold;
+  }
+  
+  .receipt-header p {
+    margin: 2px 0;
+    font-size: 9pt;
+  }
+  
+  .receipt-items {
+    margin: 6px 0;
+  }
+  
+  .receipt-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9pt;
+    padding: 2px 0;
+  }
+  
+  .receipt-item .item-name {
+    flex: 1;
+  }
+  
+  .receipt-item .item-qty {
+    margin: 0 6px;
+    text-align: center;
+  }
+  
+  .receipt-item .item-price {
+    text-align: right;
+    min-width: 50px;
+  }
+  
+  .receipt-totals {
+    border-top: 1px dashed #000;
+    padding-top: 4px;
+    margin-top: 4px;
+  }
+  
+  .receipt-total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10pt;
+    font-weight: bold;
+  }
+  
+  .receipt-footer {
+    text-align: center;
+    border-top: 1px dashed #000;
+    padding-top: 6px;
+    margin-top: 6px;
+    font-size: 9pt;
+  }
+  
+  /* Page setup */
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+}

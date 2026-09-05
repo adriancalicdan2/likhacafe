@@ -1,0 +1,21 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "cleanUrls": true,
+    "rewrites": [
+      { "source": "/login", "destination": "/login.html" },
+      { "source": "/admin", "destination": "/login.html" },
+      { "source": "/staff", "destination": "/login.html" },
+      { "source": "/pos", "destination": "/login.html" },
+      { "source": "/progress", "destination": "/progress.html" },
+      { "source": "/queue", "destination": "/progress.html" },
+      { "source": "/customer", "destination": "/index.html" },
+      { "source": "**", "destination": "/index.html" }
+    ]
+  }
+}

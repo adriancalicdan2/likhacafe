@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Likhā Café — Live Order Progress & Queue Board</title>
+    <meta name="description" content="Likhā Café Live Order Progress & TV Status Display Board">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=JetBrains+Mono:wght@500;700;800;900&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <!-- Queue Board Styles -->
+    <link rel="stylesheet" href="css/progress.css">
+</head>
+<body>
+    <div id="queueBoardApp" class="queue-board-app">
+        <!-- Top Display Header -->
+        <header class="board-header">
+            <div class="board-brand">
+                <div class="board-logo">
+                    <i class="fas fa-mug-hot"></i>
+                </div>
+                <div class="brand-info">
+                    <h1>Likhā <span>Café</span></h1>
+                    <p>Live Order Status Board</p>
+                </div>
+            </div>
+
+            <div class="board-header-center">
+                <div class="board-live-tag">
+                    <span class="live-dot"></span>
+                    <span>Live Queue</span>
+                </div>
+                <div class="board-clock" id="boardClock">
+                    <i class="far fa-clock"></i>
+                    <span id="boardClockTime">--:--:--</span>
+                </div>
+            </div>
+
+            <div class="board-header-right">
+                <button type="button" class="btn-tv-control sound-active" id="toggleSoundBtn" title="Toggle Chime Sound">
+                    <i class="fas fa-volume-up" id="soundIcon"></i>
+                    <span id="soundLabel">Sound ON</span>
+                </button>
+                <button type="button" class="btn-tv-control" id="toggleFullscreenBtn" title="Fullscreen Mode (F11)">
+                    <i class="fas fa-expand"></i>
+                    <span>Fullscreen</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main 2-Column Board -->
+        <main class="board-columns-container">
+            <!-- 1. Preparing Column -->
+            <section class="board-column">
+                <div class="column-header header-preparing">
+                    <div class="col-title-group">
+                        <div class="col-icon-badge">
+                            <i class="fas fa-blender"></i>
+                        </div>
+                        <div class="col-titles">
+                            <h2>Preparing</h2>
+                            <p>Crafting in Kitchen & Bar</p>
+                        </div>
+                    </div>
+                    <span class="col-count-badge" id="prepCountBadge">0 Orders</span>
+                </div>
+                <div class="column-grid" id="preparingGrid">
+                    <div class="board-empty-state">
+                        <i class="fas fa-mug-hot"></i>
+                        <p>No orders currently preparing</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. Ready / Serving Column -->
+            <section class="board-column">
+                <div class="column-header header-ready">
+                    <div class="col-title-group">
+                        <div class="col-icon-badge">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <div class="col-titles">
+                            <h2>Now Serving</h2>
+                            <p>Ready! Please claim at Pickup Counter</p>
+                        </div>
+                    </div>
+                    <span class="col-count-badge" id="readyCountBadge">0 Orders</span>
+                </div>
+                <div class="column-grid" id="readyGrid">
+                    <div class="board-empty-state">
+                        <i class="fas fa-check-circle"></i>
+                        <p>No orders waiting for pickup</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Ticker Announcement Footer -->
+        <footer class="board-footer">
+            <div class="ticker-text">
+                <i class="fas fa-info-circle"></i>
+                <span>Please present your receipt or order ticket number at the pickup counter when your number is called.</span>
+            </div>
+            <div class="ticker-motto">
+                "Coffee · Comfort · Connection"
+            </div>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="js/progressApp.js"></script>
+</body>
+</html>

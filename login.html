@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Likhā Café — Staff & Admin Portal</title>
+    <meta name="description" content="Likhā Café Staff POS & Admin Management Portal — Coffee · Comfort · Connection">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/tablet.css">
+    <link rel="stylesheet" href="css/print.css">
+</head>
+<body>
+    <!-- App Container -->
+    <div id="app">
+        <!-- Loading Screen -->
+        <div id="loadingScreen" class="loading-screen">
+            <div class="loading-content">
+                <div class="cafe-logo">
+                    <i class="fas fa-mug-hot"></i>
+                    <h1>Likhā Café</h1>
+                    <p class="tagline">Coffee · Comfort · Connection</p>
+                </div>
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                </div>
+                <p class="loading-text">Connecting to Firestore...</p>
+            </div>
+            <script>
+                // Instant fallback: Ensure loader is dismissed within 800ms
+                setTimeout(function() {
+                    var ls = document.getElementById('loadingScreen');
+                    var login = document.getElementById('loginScreen');
+                    var app = document.getElementById('mainApp');
+                    if (ls && (!app || app.classList.contains('hidden'))) {
+                        ls.classList.add('hidden');
+                        ls.style.display = 'none';
+                        if (login) {
+                            login.classList.remove('hidden');
+                            login.style.display = 'flex';
+                        }
+                    }
+                }, 800);
+            </script>
+        </div>
+
+        <!-- Login Screen -->
+        <div id="loginScreen" class="login-screen hidden">
+            <div class="login-container">
+                <div class="login-header">
+                    <div class="login-logo">
+                        <i class="fas fa-mug-hot"></i>
+                        <h1>Likhā Café</h1>
+                    </div>
+                    <p class="login-subtitle">Staff & Admin Portal</p>
+                </div>
+                
+                <div class="login-tabs">
+                    <button type="button" class="login-tab active" data-tab="email" onclick="switchLoginTab('email')">Email Login</button>
+                    <button type="button" class="login-tab" data-tab="pin" onclick="switchLoginTab('pin')">PIN Login</button>
+                </div>
+                <script>
+                    function switchLoginTab(tabName) {
+                        document.querySelectorAll('.login-tab').forEach(function(t) {
+                            if (t.getAttribute('data-tab') === tabName) {
+                                t.classList.add('active');
+                            } else {
+                                t.classList.remove('active');
+                            }
+                        });
+                        document.querySelectorAll('.login-form').forEach(function(f) {
+                            f.classList.remove('active');
+                            f.style.display = 'none';
+                        });
+                        var target = document.getElementById(tabName + 'Login');
+                        if (target) {
+                            target.classList.add('active');
+                            target.style.display = 'block';
+                        }
+                    }
+                </script>
+
+                <!-- Email Login -->
+                <form id="emailLogin" class="login-form active">
+                    <div class="form-group">
+                        <label><i class="fas fa-envelope"></i> Email</label>
+                        <input type="email" id="loginEmail" placeholder="admin@likhacafe.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-lock"></i> Password</label>
+                        <input type="password" id="loginPassword" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="btn-primary btn-block">
+                        <i class="fas fa-sign-in-alt"></i> Sign In
+                    </button>
+                </form>
+
+                <!-- PIN Login -->
+                <form id="pinLogin" class="login-form">
+                    <div class="form-group">
+                        <label><i class="fas fa-key"></i> Staff PIN</label>
+                        <input type="password" id="loginPin" placeholder="Enter 4-digit PIN (default: 1234)" maxlength="4" inputmode="numeric">
+                    </div>
+                    <button type="submit" class="btn-primary btn-block">
+                        <i class="fas fa-key"></i> Quick Login
+                    </button>
+                </form>
+
+                <div class="login-footer">
+                    <p class="cafe-info">
+                        <i class="fas fa-store"></i> Imus, Philippines<br>
+                        <i class="fas fa-clock"></i> Tue-Sun · Until 2AM
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main App -->
+        <div id="mainApp" class="main-app hidden">
+            <!-- Top Header -->
+            <header class="app-header">
+                <div class="header-left">
+                    <div class="cafe-brand">
+                        <i class="fas fa-mug-hot"></i>
+                        <span class="brand-name">Likhā</span>
+                        <span class="brand-sub">Café</span>
+                    </div>
+                    <div class="header-time">
+                        <i class="far fa-clock"></i>
+                        <span id="currentTime"></span>
+                    </div>
+                </div>
+                <div class="header-center">
+                    <div class="order-counter">
+                        <i class="fas fa-receipt"></i>
+                        <span id="orderCount">0</span> orders today
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="connection-status" id="connectionStatus" title="Firestore Connected">
+                        <i class="fas fa-cloud"></i>
+                    </div>
+                    <div class="staff-info">
+                        <i class="fas fa-user-circle"></i>
+                        <span id="staffName">Staff</span>
+                    </div>
+                    <button id="logoutBtn" class="btn-icon" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Main Content -->
+            <div class="app-content">
+                <!-- Sidebar / Navigation -->
+                <nav class="sidebar">
+                    <button class="nav-item active" data-page="menu">
+                        <i class="fas fa-utensils"></i>
+                        <span>Menu</span>
+                    </button>
+                    <button class="nav-item" data-page="orders">
+                        <i class="fas fa-receipt"></i>
+                        <span>Orders</span>
+                        <span class="nav-badge" id="pendingBadge" style="display:none;">0</span>
+                    </button>
+                    <button class="nav-item" data-page="admin">
+                        <i class="fas fa-crown"></i>
+                        <span>Admin</span>
+                    </button>
+                    <button class="nav-item" data-page="analytics">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Analytics</span>
+                    </button>
+                </nav>
+
+                <!-- Page Content -->
+                <div class="page-container">
+                    <!-- Menu Page with Persistent Side Order Panel -->
+                    <div id="menuPage" class="page active">
+                        <div class="pos-layout">
+                            <!-- Left: Menu Area -->
+                            <div class="pos-menu-section">
+                                <div class="page-header">
+                                    <h2><i class="fas fa-utensils"></i> Menu</h2>
+                                    <div class="page-actions">
+                                        <div class="search-box">
+                                            <i class="fas fa-search"></i>
+                                            <input type="text" id="menuSearch" placeholder="Search menu...">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="category-filter-scroll" id="categoryFilter"></div>
+                                <div class="menu-grid" id="menuGrid"></div>
+                            </div>
+
+                            <!-- Right: Side Order Panel for Staff -->
+                            <div class="pos-order-sidebar">
+                                <div class="order-sidebar-header">
+                                    <h3><i class="fas fa-shopping-cart"></i> Current Order</h3>
+                                    <button type="button" id="clearCartBtn" class="btn-text-danger" title="Clear Order">
+                                        <i class="fas fa-trash-alt"></i> Clear
+                                    </button>
+                                </div>
+
+                                <div style="padding: 0.75rem 1.25rem 0 1.25rem;">
+                                    <!-- Order Type -->
+                                    <div class="order-type-toggle">
+                                        <button type="button" class="order-type-btn active" data-type="Dine-in">
+                                            <i class="fas fa-store"></i> Dine-in
+                                        </button>
+                                        <button type="button" class="order-type-btn" data-type="Takeout">
+                                            <i class="fas fa-bag-shopping"></i> Takeout
+                                        </button>
+                                    </div>
+
+                                    <!-- Table Selector -->
+                                    <div class="table-select-row" id="tableSelectRow">
+                                        <label><i class="fas fa-chair"></i> Table #</label>
+                                        <select id="tableNumber" class="form-select-sm">
+                                            <option value="">No table</option>
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                            <option value="4">4</option>
+                                            <option value="5">5</option>
+                                            <option value="6">6</option>
+                                            <option value="7">7</option>
+                                            <option value="8">8</option>
+                                            <option value="9">9</option>
+                                            <option value="10">10</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Cart Items List -->
+                                <div class="order-sidebar-items" id="cartItems">
+                                    <div class="empty-cart">
+                                        <i class="fas fa-shopping-basket"></i>
+                                        <p>No items in order</p>
+                                        <span>Tap any item on the menu to add</span>
+                                    </div>
+                                </div>
+
+                                <!-- Summary Footer -->
+                                <div class="order-sidebar-footer">
+                                    <div class="summary-row">
+                                        <span>Subtotal</span>
+                                        <span id="cartSubtotal">₱0.00</span>
+                                    </div>
+                                    <div class="summary-row" id="vatSummaryRow">
+                                        <span>VAT (<span id="summaryVatPercent">12</span>% Included)</span>
+                                        <span id="cartTax">₱0.00</span>
+                                    </div>
+                                    <div class="summary-row takeout-tax-row" id="takeoutTaxRow" style="display:none;">
+                                        <span>Takeout Tax (<span id="summaryTakeoutTaxPercent">5</span>%)</span>
+                                        <span id="cartTakeoutTax">₱0.00</span>
+                                    </div>
+                                    <div class="summary-row discount-row">
+                                        <span>Discount</span>
+                                        <div class="discount-input">
+                                            <input type="number" id="discountInput" placeholder="0" min="0" step="1">
+                                            <select id="discountType">
+                                                <option value="percentage">%</option>
+                                                <option value="fixed">₱</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="summary-row total-row">
+                                        <span>Total Due</span>
+                                        <span id="cartTotal">₱0.00</span>
+                                    </div>
+                                    <button type="button" id="checkoutBtn" class="btn-success btn-block mt-1">
+                                        <i class="fas fa-cash-register"></i> Pay / Complete Order
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Orders Page -->
+                    <div id="ordersPage" class="page">
+                        <div class="page-header">
+                            <h2><i class="fas fa-receipt"></i> Orders Queue</h2>
+                            <div class="page-actions">
+                                <div class="order-filters">
+                                    <select id="orderStatusFilter" class="form-select">
+                                        <option value="all">All Status</option>
+                                        <option value="Pending">Pending</option>
+                                        <option value="Preparing">Preparing</option>
+                                        <option value="Ready">Ready</option>
+                                        <option value="Completed">Completed</option>
+                                        <option value="Cancelled">Cancelled</option>
+                                    </select>
+                                    <input type="date" id="orderDateFilter" class="form-input">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="orders-list" id="ordersList">
+                            <div class="empty-state">
+                                <i class="fas fa-receipt"></i>
+                                <p>No orders yet</p>
+                                <span>Orders will appear here in real-time</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Admin Page -->
+                    <div id="adminPage" class="page">
+                        <div class="page-header">
+                            <h2><i class="fas fa-crown"></i> Admin Dashboard</h2>
+                        </div>
+                        <div class="admin-tabs">
+                            <button type="button" class="admin-tab active" data-tab="menuManage" onclick="switchAdminTab('menuManage')">Menu Manager</button>
+                            <button type="button" class="admin-tab" data-tab="staffManage" onclick="switchAdminTab('staffManage')">Staff Manager</button>
+                            <button type="button" class="admin-tab" data-tab="settings" onclick="switchAdminTab('settings')">Store Settings</button>
+                        </div>
+                        <script>
+                            function switchAdminTab(panelId) {
+                                document.querySelectorAll('.admin-tab').forEach(function(t) {
+                                    if (t.getAttribute('data-tab') === panelId) {
+                                        t.classList.add('active');
+                                    } else {
+                                        t.classList.remove('active');
+                                    }
+                                });
+                                document.querySelectorAll('.admin-panel').forEach(function(p) {
+                                    p.classList.remove('active');
+                                    p.style.display = 'none';
+                                });
+                                var target = document.getElementById(panelId);
+                                if (target) {
+                                    target.classList.add('active');
+                                    target.style.display = 'block';
+                                }
+                            }
+                        </script>
+                        <div class="admin-content">
+                            <!-- 1. Menu Management Panel -->
+                            <div id="menuManage" class="admin-panel active">
+                                <div class="admin-actions">
+                                    <button type="button" id="addMenuItemBtn" class="btn-primary">
+                                        <i class="fas fa-plus"></i> Add New Item
+                                    </button>
+                                    <button type="button" id="importMenuBtn" class="btn-secondary">
+                                        <i class="fas fa-cloud-upload-alt"></i> Seed 45 Items to Firestore
+                                    </button>
+                                    <div class="search-box" style="max-width: 260px; margin-left: auto;">
+                                        <i class="fas fa-search"></i>
+                                        <input type="text" id="adminMenuSearch" placeholder="Search menu items...">
+                                    </div>
+                                </div>
+                                <div class="admin-cards-grid" id="adminMenuList"></div>
+                            </div>
+
+                            <!-- 2. Staff Management Panel -->
+                            <div id="staffManage" class="admin-panel">
+                                <div class="admin-actions">
+                                    <button type="button" id="addStaffBtn" class="btn-primary">
+                                        <i class="fas fa-user-plus"></i> Add Staff Account
+                                    </button>
+                                </div>
+                                <div class="admin-cards-grid" id="staffList"></div>
+                            </div>
+
+                            <!-- 3. Settings Panel -->
+                            <div id="settings" class="admin-panel">
+                                <div class="settings-card">
+                                    <form id="settingsForm" class="settings-form">
+                                        <h3><i class="fas fa-sliders-h"></i> Store Settings & Taxes (Firestore)</h3>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label>Store Name</label>
+                                                <input type="text" id="settingStoreName" value="Likhā Café" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Tagline</label>
+                                                <input type="text" id="settingTagline" value="Coffee · Comfort · Connection">
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label>Location / Address</label>
+                                                <input type="text" id="settingLocation" value="Imus, Philippines, 4103">
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Contact Number</label>
+                                                <input type="text" id="settingContact" value="0927 965 1044">
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label>Email</label>
+                                                <input type="email" id="settingEmail" value="marcobee.ph@gmail.com">
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Social Handle</label>
+                                                <input type="text" id="settingSocial" value="@likha_cafe">
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label>VAT Rate (%) <small style="color:var(--brown-500);font-weight:normal;">(Set 0 to disable)</small></label>
+                                                <input type="number" id="settingTaxRate" value="12" step="0.5" min="0">
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Takeout Tax Rate (%)</label>
+                                                <input type="number" id="settingTakeoutTaxRate" value="5" step="0.5" min="0">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Receipt Footer Motto</label>
+                                            <input type="text" id="settingReceiptFooter" value="Made for coffee dates, tambay sessions, late-night cravings. ❤️">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Operating Hours</label>
+                                            <input type="text" id="settingHours" value="Tue-Sun, 10:00 AM - 2:00 AM">
+                                        </div>
+                                        <button type="submit" class="btn-primary">
+                                            <i class="fas fa-save"></i> Save Settings to Firestore
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analytics Page -->
+                    <div id="analyticsPage" class="page">
+                        <div class="page-header">
+                            <h2><i class="fas fa-chart-line"></i> Analytics & Reports</h2>
+                        </div>
+                        <div class="analytics-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-coins"></i></div>
+                                <div class="stat-info">
+                                    <span class="stat-label">Today's Revenue</span>
+                                    <span class="stat-value" id="todayRevenue">₱0.00</span>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>
+                                <div class="stat-info">
+                                    <span class="stat-label">Today's Orders</span>
+                                    <span class="stat-value" id="todayOrders">0</span>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-utensils"></i></div>
+                                <div class="stat-info">
+                                    <span class="stat-label">Items Sold</span>
+                                    <span class="stat-value" id="todayItems">0</span>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-star"></i></div>
+                                <div class="stat-info">
+                                    <span class="stat-label">Top Item</span>
+                                    <span class="stat-value" id="topItem">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="analytics-breakdowns">
+                            <div class="breakdown-card">
+                                <h4><i class="fas fa-layer-group"></i> Category Breakdown</h4>
+                                <div id="categoryBreakdownList" class="breakdown-list"></div>
+                            </div>
+                            <div class="breakdown-card">
+                                <h4><i class="fas fa-wallet"></i> Payment Methods</h4>
+                                <div id="paymentBreakdownList" class="breakdown-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customization Modal (Item Options for Ordering) -->
+        <div id="customizeModal" class="modal">
+            <div class="modal-content modal-customize">
+                <div class="modal-header">
+                    <h3 id="customizeItemName"><i class="fas fa-sliders-h"></i> Customize</h3>
+                    <button type="button" class="modal-close" id="closeCustomize">&times;</button>
+                </div>
+                <div class="modal-body" id="customizeBody"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" id="cancelCustomize">Cancel</button>
+                    <button type="button" class="btn-success" id="confirmCustomize">
+                        <i class="fas fa-cart-plus"></i> Add to Order
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add / Edit Menu Item Modal (Admin CRUD) -->
+        <div id="itemModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="itemModalTitle"><i class="fas fa-utensils"></i> Add Menu Item</h3>
+                    <button type="button" class="modal-close" id="closeItemModal">&times;</button>
+                </div>
+                <form id="itemForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="itemId">
+                        <input type="hidden" id="itemExistingImageUrl">
+
+                        <!-- Item Photo Upload Zone -->
+                        <div class="form-group">
+                            <label><i class="fas fa-camera"></i> Item Photo (Upload or URL)</label>
+                            <div class="item-photo-upload-wrapper">
+                                <div id="itemPhotoDropzone" class="photo-dropzone">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <div class="dropzone-text">
+                                        <strong>Click to browse photo</strong> or drag & drop here
+                                        <span class="dropzone-hint">Supports JPG, PNG, WebP (Max 5MB)</span>
+                                    </div>
+                                    <input type="file" id="itemPhotoFile" accept="image/png, image/jpeg, image/webp" style="display:none;">
+                                </div>
+                                <div id="itemPhotoPreviewContainer" class="photo-preview-container hidden">
+                                    <div class="preview-img-wrapper">
+                                        <img id="itemPhotoPreview" src="" alt="Menu Item Preview">
+                                        <button type="button" id="removePhotoBtn" class="btn-remove-photo" title="Remove Photo">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <div class="preview-actions">
+                                        <span id="photoStatusLabel" class="photo-status-label">Photo selected</span>
+                                        <button type="button" id="changePhotoBtn" class="btn-text-sm">
+                                            <i class="fas fa-sync-alt"></i> Change
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="photo-url-fallback" style="margin-top: 0.5rem;">
+                                <input type="url" id="itemPhotoUrl" placeholder="Or paste image URL (e.g. https://...)" class="form-input-sm">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Item Name *</label>
+                            <input type="text" id="itemName" placeholder="e.g. Spanish Latte" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Category *</label>
+                                <select id="itemCategory" class="form-select" required>
+                                    <option value="Coffee">Coffee</option>
+                                    <option value="Non-Coffee">Non-Coffee</option>
+                                    <option value="Matcha">Matcha</option>
+                                    <option value="Frappe">Frappe</option>
+                                    <option value="Shareables">Shareables</option>
+                                    <option value="Pasta">Pasta</option>
+                                    <option value="Sandwiches">Sandwiches</option>
+                                    <option value="Wings">Wings</option>
+                                    <option value="Silogs">Silogs</option>
+                                    <option value="Rice Meals">Rice Meals</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Base Price (₱) *</label>
+                                <input type="number" id="itemPrice" placeholder="130" step="1" min="0" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Available Sizes (comma-separated)</label>
+                                <input type="text" id="itemSizes" placeholder="Hot, Iced">
+                            </div>
+                            <div class="form-group">
+                                <label>Tags (comma-separated)</label>
+                                <input type="text" id="itemTags" placeholder="Best Seller, Popular">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Description (optional)</label>
+                            <input type="text" id="itemDesc" placeholder="e.g. Sweetened condensed milk espresso">
+                        </div>
+                        <div class="form-group">
+                            <label>Custom Options Flags</label>
+                            <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.25rem;">
+                                <label style="display:flex;align-items:center;gap:0.35rem;font-weight:normal;cursor:pointer;">
+                                    <input type="checkbox" id="itemHasWingsFlavors"> Has Wing Flavors
+                                </label>
+                                <label style="display:flex;align-items:center;gap:0.35rem;font-weight:normal;cursor:pointer;">
+                                    <input type="checkbox" id="itemHasEggOptions"> Has Egg Styles
+                                </label>
+                                <label style="display:flex;align-items:center;gap:0.35rem;font-weight:normal;cursor:pointer;">
+                                    <input type="checkbox" id="itemHasMilkSugar"> Has Milk & Sugar
+                                </label>
+                                <label style="display:flex;align-items:center;gap:0.35rem;font-weight:normal;cursor:pointer;">
+                                    <input type="checkbox" id="itemAvailable" checked> Available in Stock
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" id="cancelItemModal">Cancel</button>
+                        <button type="submit" class="btn-success">
+                            <i class="fas fa-save"></i> Save Item to Firestore
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Add / Edit Staff Modal (Admin CRUD) -->
+        <div id="staffModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="staffModalTitle"><i class="fas fa-user-plus"></i> Staff Member</h3>
+                    <button type="button" class="modal-close" id="closeStaffModal">&times;</button>
+                </div>
+                <form id="staffForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="staffId">
+                        <div class="form-group">
+                            <label>Full Name *</label>
+                            <input type="text" id="staffInputName" placeholder="e.g. Maria Santos" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email (optional)</label>
+                            <input type="email" id="staffInputEmail" placeholder="staff@likhacafe.com">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Role *</label>
+                                <select id="staffInputRole" class="form-select" required>
+                                    <option value="cashier">Cashier</option>
+                                    <option value="manager">Manager</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="kitchen">Kitchen Staff</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>4-Digit PIN *</label>
+                                <input type="password" id="staffInputPin" placeholder="1234" maxlength="4" inputmode="numeric" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label style="display:flex;align-items:center;gap:0.35rem;font-weight:normal;cursor:pointer;">
+                                <input type="checkbox" id="staffInputActive" checked> Active Employee
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" id="cancelStaffModal">Cancel</button>
+                        <button type="submit" class="btn-success">
+                            <i class="fas fa-save"></i> Save Staff to Firestore
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Checkout Modal (Payment) -->
+        <div id="checkoutModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-credit-card"></i> Complete Payment</h3>
+                    <button type="button" class="modal-close" id="closeCheckoutModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="order-review">
+                        <h4>Order Summary</h4>
+                        <div class="checkout-order-type" id="checkoutOrderType"></div>
+                        <div id="orderReviewItems"></div>
+                        <div class="order-review-total">
+                            <span>Total Due: <strong id="orderReviewTotal">₱0.00</strong></span>
+                        </div>
+                    </div>
+                    <div class="payment-section">
+                        <h4>Payment Method</h4>
+                        <div class="payment-methods">
+                            <button type="button" class="payment-btn active" data-method="Cash">
+                                <i class="fas fa-money-bill-wave"></i> Cash
+                            </button>
+                            <button type="button" class="payment-btn" data-method="Card">
+                                <i class="fas fa-credit-card"></i> Card
+                            </button>
+                            <button type="button" class="payment-btn" data-method="GCash">
+                                <i class="fas fa-mobile-alt"></i> GCash
+                            </button>
+                        </div>
+                        <div class="payment-amount">
+                            <div class="form-group">
+                                <label>Amount Received (₱)</label>
+                                <input type="number" id="paymentAmount" placeholder="0.00" step="1" min="0">
+                            </div>
+                            <div class="quick-amounts" id="quickAmounts"></div>
+                            <div class="change-display">
+                                <span>Change: <strong id="changeAmount">₱0.00</strong></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Customer Name (optional)</label>
+                            <input type="text" id="customerName" placeholder="Walk-in customer">
+                        </div>
+                        <div class="form-group">
+                            <label>Order Notes (optional)</label>
+                            <input type="text" id="orderNotes" placeholder="Extra napkins, less ice, etc.">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" id="cancelCheckout">Cancel</button>
+                    <button type="button" class="btn-success" id="confirmCheckout">
+                        <i class="fas fa-check"></i> Submit Order
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Confirmation Modal for Kiosk / Pending Orders -->
+        <div id="paymentConfirmModal" class="modal">
+            <div class="modal-content" style="max-width: 480px;">
+                <div class="modal-header">
+                    <h3><i class="fas fa-cash-register"></i> Confirm Payment & Prepare</h3>
+                    <button type="button" class="modal-close" id="closePaymentConfirmModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div style="background: var(--brown-50); border: 1px solid var(--brown-200); padding: 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                            <span style="font-size: 0.85rem; color: var(--brown-600);">Order Number:</span>
+                            <strong id="kioskPayOrderNumber" style="font-family: var(--font-mono); color: var(--brown-900);">LIKHA-0000</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                            <span style="font-size: 0.85rem; color: var(--brown-600);">Customer:</span>
+                            <strong id="kioskPayCustomerName">Walk-in</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 1.15rem; font-weight: 800; color: var(--brown-900); border-top: 1px dashed var(--brown-300); padding-top: 0.5rem; margin-top: 0.5rem;">
+                            <span>Total Due:</span>
+                            <span id="kioskPayTotalDue" style="color: var(--yellow-600);">₱0.00</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="font-weight: 700; color: var(--brown-800); margin-bottom: 0.4rem; display: block;">Select Payment Method</label>
+                        <div class="payment-methods" id="kioskPaymentMethods" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+                            <button type="button" class="payment-btn active" data-method="Cash"><i class="fas fa-money-bill-wave"></i> Cash</button>
+                            <button type="button" class="payment-btn" data-method="GCash"><i class="fas fa-mobile-alt"></i> GCash</button>
+                            <button type="button" class="payment-btn" data-method="Card"><i class="fas fa-credit-card"></i> Card</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="kioskCashAmountGroup">
+                        <label style="font-weight: 700; color: var(--brown-800); margin-bottom: 0.4rem; display: block;">Amount Received (Cash)</label>
+                        <input type="number" id="kioskPaymentAmount" placeholder="0.00" class="form-input" style="width: 100%; font-size: 1.25rem; font-weight: 700; padding: 0.65rem 1rem;">
+                        <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.95rem; font-weight: 700;">
+                            <span>Change Due:</span>
+                            <span id="kioskChangeAmount" style="color: var(--success);">₱0.00</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" id="cancelKioskPayBtn">Cancel</button>
+                    <button type="button" class="btn-success" id="confirmKioskPayBtn">
+                        <i class="fas fa-utensils"></i> Confirm & Mark Preparing
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Print Confirmation Modal -->
+        <div id="printConfirmModal" class="modal">
+            <div class="modal-content" style="max-width: 440px; text-align: center;">
+                <div class="modal-header" style="justify-content: center; border-bottom: none; padding-bottom: 0;">
+                    <div style="width: 56px; height: 56px; background: var(--yellow-100); color: var(--success); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; margin: 0 auto;">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+                <div class="modal-body" style="padding-top: 0.5rem;">
+                    <h3 style="font-size: 1.35rem; color: var(--brown-900); margin-bottom: 0.25rem;">Order Completed!</h3>
+                    <p id="confirmOrderNumber" style="font-weight: 700; color: var(--brown-700); font-size: 1.05rem;"></p>
+                    
+                    <div style="background: var(--brown-100); border-radius: var(--radius-sm); padding: 1rem; margin: 1rem 0; text-align: left;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem; font-size: 0.9rem;">
+                            <span style="color: var(--brown-600);">Total Paid:</span>
+                            <strong id="confirmOrderTotal">₱0.00</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                            <span style="color: var(--brown-600);">Change:</span>
+                            <strong id="confirmOrderChange" style="color: var(--success);">₱0.00</strong>
+                        </div>
+                    </div>
+                    <p style="font-size: 0.88rem; color: var(--brown-500);">Would you like to print the customer receipt?</p>
+                </div>
+                <div class="modal-footer" style="justify-content: center; gap: 0.75rem; border-top: none; padding-top: 0;">
+                    <button type="button" class="btn-secondary" id="skipPrintBtn">
+                        <i class="fas fa-forward"></i> Skip / Next Order
+                    </button>
+                    <button type="button" class="btn-primary" id="confirmPrintBtn">
+                        <i class="fas fa-print"></i> Print Receipt
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div id="toastContainer" class="toast-container"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

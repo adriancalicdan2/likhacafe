@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Likhā Café — Customer Self-Order & Tracking</title>
+    <meta name="description" content="Likhā Café Customer Self-Order Portal & Live Order Status Tracker">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <!-- Customer Kiosk Styles -->
+    <link rel="stylesheet" href="css/customer.css">
+    
+    <!-- Immediate active order check to prevent menu flash -->
+    <script>
+        try {
+            var _savedOrder = localStorage.getItem('likha_active_customer_order');
+            var _urlParam = new URLSearchParams(window.location.search).get('orderId');
+            if (_savedOrder || _urlParam) {
+                document.documentElement.classList.add('has-active-order');
+            }
+        } catch (e) {}
+    </script>
+</head>
+<body>
+    <div id="customerApp" class="customer-app">
+        <!-- Top Sticky Header -->
+        <header class="kiosk-header">
+            <div class="kiosk-brand" id="brandHomeBtn">
+                <div class="brand-icon">
+                    <i class="fas fa-mug-hot"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>Likhā Café</h1>
+                    <p>Coffee · Comfort · Connection</p>
+                </div>
+            </div>
+
+            <div class="kiosk-nav-actions">
+                <button type="button" class="btn-kiosk-action hidden" id="headerTrackerBtn">
+                    <i class="fas fa-clock"></i>
+                    <span id="headerTrackerLabel">Track Order</span>
+                </button>
+                <button type="button" class="btn-kiosk-action" id="headerCartBtn">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span id="headerCartCount">0</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Screen 1: Menu Browsing & Ordering View -->
+        <main id="kioskMenuView" class="kiosk-view active">
+            <!-- Hero Banner -->
+            <section class="kiosk-hero">
+                <div class="hero-card">
+                    <div class="hero-card-left">
+                        <h2>Welcome to Likhā Café! ✨</h2>
+                        <p>Order your favorite coffee, comforting meals, and shareables right here.</p>
+                    </div>
+                    <div class="hero-card-right">
+                        <div class="table-tag">
+                            <i class="fas fa-store"></i>
+                            <span id="currentDiningBadge">Dine-in / Takeout</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Search & Category Filters -->
+            <section class="kiosk-categories-wrapper">
+                <div class="kiosk-search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="kioskSearchInput" placeholder="Search Spanish Latte, Wings, Silog, Matcha...">
+                </div>
+                <div class="category-scroll" id="kioskCategoryScroll">
+                    <!-- Populated dynamically -->
+                </div>
+            </section>
+
+            <!-- Menu Cards Grid -->
+            <section class="kiosk-menu-container">
+                <div class="kiosk-menu-grid" id="kioskMenuGrid">
+                    <div style="grid-column: 1/-1; text-align: center; padding: 4rem 1rem; color: var(--brown-500);">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 0.75rem;"></i>
+                        <p>Loading fresh menu items...</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Screen 2: Real-time Order Tracker Screen -->
+        <section id="kioskTrackerView" class="kiosk-view order-tracker-view hidden">
+            <div class="tracker-ticket-card">
+                <!-- Header with Order Ticket -->
+                <div class="tracker-ticket-header">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                        <span class="queue-badge" id="trackerQueueBadge">ORDER IN QUEUE</span>
+                        <button type="button" class="btn-kiosk-sound sound-active" id="custSoundToggleBtn" title="Ready Alarm Sound">
+                            <i class="fas fa-bell" id="custSoundIcon"></i>
+                            <span id="custSoundLabel">Ready Alarm ON</span>
+                        </button>
+                    </div>
+                    <div class="ticket-order-number" id="trackerOrderNumber">LIKHA-0000</div>
+                    <div class="ticket-customer-info">
+                        <span id="trackerCustomerName">Walk-in</span> • 
+                        <span id="trackerOrderType">Dine-in</span>
+                        <span id="trackerTableInfo"></span>
+                    </div>
+                </div>
+
+                <!-- 4-Stage Stepper -->
+                <div class="tracker-stepper">
+                    <div class="stepper-progress-bar" id="stepperProgressBar" style="width: 15%;"></div>
+                    
+                    <div class="step-node active" id="step1Node">
+                        <div class="step-circle"><i class="fas fa-wallet"></i></div>
+                        <span class="step-label">1. To Pay</span>
+                    </div>
+                    <div class="step-node" id="step2Node">
+                        <div class="step-circle"><i class="fas fa-blender"></i></div>
+                        <span class="step-label">2. Preparing</span>
+                    </div>
+                    <div class="step-node" id="step3Node">
+                        <div class="step-circle"><i class="fas fa-bell"></i></div>
+                        <span class="step-label">3. Ready</span>
+                    </div>
+                    <div class="step-node" id="step4Node">
+                        <div class="step-circle"><i class="fas fa-check"></i></div>
+                        <span class="step-label">4. Enjoy</span>
+                    </div>
+                </div>
+
+                <!-- Live Status Callout Box -->
+                <div class="status-callout-box status-pending" id="statusCalloutBox">
+                    <div class="status-callout-icon" id="statusCalloutIcon">
+                        <i class="fas fa-cash-register"></i>
+                    </div>
+                    <div class="status-callout-content">
+                        <h3 id="statusCalloutTitle">Pay at Cashier Counter</h3>
+                        <p id="statusCalloutDesc">Please present your Order Number at the cashier counter to complete payment (Cash, Card, GCash).</p>
+                    </div>
+                </div>
+
+                <!-- Order Item Details -->
+                <div class="tracker-items-list">
+                    <h4><i class="fas fa-receipt"></i> Order Summary</h4>
+                    <div id="trackerItemsContainer"></div>
+                    <div class="tracker-totals-row">
+                        <span>Total Amount:</span>
+                        <span id="trackerTotalAmount">₱0.00</span>
+                    </div>
+                </div>
+
+                <!-- Action Footer -->
+                <div style="padding: 1.25rem 1.5rem; background: var(--brown-50); border-top: 1px solid var(--brown-200); display: flex; flex-direction: column; gap: 0.5rem; align-items: center;">
+                    <button type="button" id="startNewOrderBtn" class="btn-kiosk-action" style="width: 100%; justify-content: center; padding: 0.95rem; background: var(--yellow-500); color: var(--brown-900); font-size: 1.05rem; font-weight: 800; border-radius: var(--radius-full); box-shadow: var(--shadow); border: none; cursor: pointer;">
+                        <i class="fas fa-plus-circle"></i> Place New Order
+                    </button>
+                    <p style="font-size: 0.8rem; color: var(--brown-500); margin: 0; text-align: center;">Want to order more? Click here to return to the menu and order again.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Floating Bottom Cart Bar -->
+        <div class="floating-cart-bar" id="kioskFloatingCart">
+            <div class="floating-cart-info">
+                <div class="cart-count-badge" id="floatingCartCount">0</div>
+                <div class="cart-totals-text">
+                    <div class="cart-total-label">Total Amount</div>
+                    <div class="cart-total-price" id="floatingCartTotal">₱0.00</div>
+                </div>
+            </div>
+            <button type="button" class="btn-view-cart" id="openCartBtn">
+                Review Order <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+
+        <!-- Customization Modal for Items -->
+        <div class="kiosk-modal-overlay" id="kioskCustomizeModal">
+            <div class="kiosk-modal-sheet">
+                <div class="modal-header-kiosk">
+                    <h3 id="custModalItemName"><i class="fas fa-sliders-h"></i> Customize Item</h3>
+                    <button type="button" class="modal-close-btn" id="closeCustModal">&times;</button>
+                </div>
+                <div class="modal-body-kiosk" id="custModalBody">
+                    <!-- Dynamic customization options -->
+                </div>
+                <div class="modal-footer-kiosk">
+                    <div class="qty-stepper">
+                        <button type="button" class="btn-stepper" id="custQtyMinus">-</button>
+                        <span class="stepper-val" id="custQtyVal">1</span>
+                        <button type="button" class="btn-stepper" id="custQtyPlus">+</button>
+                    </div>
+                    <button type="button" class="btn-add-kiosk" id="confirmAddCartBtn" style="padding: 0.75rem 1.5rem; font-size: 0.95rem;">
+                        <i class="fas fa-cart-plus"></i> Add to Order • <span id="custModalPrice">₱0.00</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cart Review & Checkout Modal -->
+        <div class="kiosk-modal-overlay" id="kioskCartModal">
+            <div class="kiosk-modal-sheet">
+                <div class="modal-header-kiosk">
+                    <h3><i class="fas fa-shopping-bag"></i> Your Order Summary</h3>
+                    <button type="button" class="modal-close-btn" id="closeCartModal">&times;</button>
+                </div>
+                <div class="modal-body-kiosk">
+                    <!-- Dining Option -->
+                    <div class="form-group">
+                        <div class="opt-group-label"><i class="fas fa-chair"></i> Dining Option</div>
+                        <div class="pill-options-row">
+                            <div class="opt-pill active" data-dine="Dine-in" id="dineInPill">
+                                <i class="fas fa-utensils"></i> Dine-in
+                            </div>
+                            <div class="opt-pill" data-dine="Takeout" id="takeoutPill">
+                                <i class="fas fa-shopping-bag"></i> Takeout
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Table Number (if dine in) -->
+                    <div class="form-group" id="tableGroup">
+                        <div class="opt-group-label" style="display:flex; justify-content:space-between; align-items:center;">
+                            <span><i class="fas fa-map-marker-alt"></i> Table Number (Optional)</span>
+                            <span style="font-size:0.75rem; font-weight:normal; color:var(--brown-500);">Type or pick below</span>
+                        </div>
+                        <div style="margin-bottom: 0.5rem;">
+                            <input type="text" id="custTableInput" placeholder="e.g. 4, Table 12, Balcony, Bar Seat... (Optional)" class="form-input" style="width: 100%; padding: 0.75rem 1rem; border-radius: var(--radius); border: 1.5px solid var(--brown-200); font-size: 0.92rem;">
+                        </div>
+                        <div class="pill-options-row" style="gap: 0.35rem;" id="tableSelectorPills">
+                            <div class="opt-pill active" data-table="">No Table</div>
+                            <div class="opt-pill" data-table="1">Table 1</div>
+                            <div class="opt-pill" data-table="2">Table 2</div>
+                            <div class="opt-pill" data-table="3">Table 3</div>
+                            <div class="opt-pill" data-table="4">Table 4</div>
+                            <div class="opt-pill" data-table="5">Table 5</div>
+                            <div class="opt-pill" data-table="6">Table 6</div>
+                        </div>
+                    </div>
+
+                    <!-- Customer Name -->
+                    <div class="form-group">
+                        <div class="opt-group-label"><i class="fas fa-user"></i> Your Name *</div>
+                        <input type="text" id="custCustomerName" placeholder="e.g. Maria Clara" class="form-input" style="width: 100%; padding: 0.75rem 1rem; border-radius: var(--radius); border: 1.5px solid var(--brown-200); font-size: 0.92rem;" required>
+                    </div>
+
+                    <!-- Special Notes -->
+                    <div class="form-group">
+                        <div class="opt-group-label"><i class="fas fa-comment-dots"></i> Special Instructions</div>
+                        <input type="text" id="custOrderNotes" placeholder="e.g. Less ice, extra napkins..." class="form-input" style="width: 100%; padding: 0.75rem 1rem; border-radius: var(--radius); border: 1.5px solid var(--brown-200); font-size: 0.92rem;">
+                    </div>
+
+                    <!-- Items List -->
+                    <div class="form-group">
+                        <div class="opt-group-label"><i class="fas fa-list"></i> Selected Items</div>
+                        <div id="cartItemsListContainer" style="display: flex; flex-direction: column;"></div>
+                    </div>
+
+                    <!-- Price Breakdown -->
+                    <div style="background: var(--brown-50); padding: 1rem; border-radius: var(--radius); border: 1px solid var(--brown-200);">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:0.35rem; font-size:0.88rem; color:var(--brown-600);">
+                            <span>Subtotal:</span>
+                            <span id="cartModalSubtotal">₱0.00</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem; font-size:0.88rem; color:var(--brown-600);">
+                            <span>VAT (12% Included):</span>
+                            <span id="cartModalTax">₱0.00</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; font-size:1.15rem; font-weight:800; color:var(--brown-900); border-top:1.5px solid var(--brown-200); padding-top:0.5rem;">
+                            <span>Total Due:</span>
+                            <span id="cartModalTotal" style="color:var(--yellow-600);">₱0.00</span>
+                        </div>
+                    </div>
+
+                    <div style="background: var(--warning-bg); border: 1px solid var(--warning-border); padding: 0.75rem 1rem; border-radius: var(--radius); font-size: 0.82rem; color: var(--warning); display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-info-circle" style="font-size: 1.1rem;"></i>
+                        <span>Payment will be collected at the cashier counter upon placing this self-order.</span>
+                    </div>
+                </div>
+                <div class="modal-footer-kiosk">
+                    <button type="button" class="btn-kiosk-action" id="cancelCartBtn">Cancel</button>
+                    <button type="button" class="btn-add-kiosk" id="submitSelfOrderBtn" style="padding: 0.85rem 1.5rem; font-size: 0.95rem;">
+                        <i class="fas fa-check-circle"></i> Place Order Now
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div id="kioskToast" class="kiosk-toast">
+            <i class="fas fa-check-circle" style="color: var(--yellow-400);"></i>
+            <span id="kioskToastMsg">Notification message</span>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="js/customerApp.js"></script>
+</body>
+</html>
