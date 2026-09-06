@@ -52,6 +52,21 @@ function initApp() {
   const loadingTimeout = setTimeout(() => {
     hideLoading();
     if (!currentUser) {
+      // Check localStorage before showing login — there may be a persisted session
+      try {
+        const storedStaff = localStorage.getItem('likha_staffData');
+        if (storedStaff) {
+          currentUser = JSON.parse(storedStaff);
+          showMainApp();
+          loadMenu();
+          initOrders();
+          loadStaff();
+          updateStaffInfo();
+          return;
+        }
+      } catch (e) {
+        console.warn('Loading timeout localStorage check notice:', e);
+      }
       showLogin();
     }
   }, 1200);

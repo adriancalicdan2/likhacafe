@@ -8,6 +8,7 @@ import {
   doc,
   getDocs,
   addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   onSnapshot,
@@ -31,8 +32,7 @@ class MenuService {
     try {
       const q = query(
         collection(db, this.collectionName),
-        orderBy('category'),
-        orderBy('name')
+        orderBy('category')
       );
       
       this.unsubscribe = onSnapshot(q, (snapshot) => {
@@ -124,14 +124,14 @@ class MenuService {
     }
   }
 
-  // Update item
+  // Update item (uses setDoc merge so it works even if the doc doesn't exist yet)
   async updateItem(id, itemData) {
     try {
       const docRef = doc(db, this.collectionName, id);
-      await updateDoc(docRef, {
+      await setDoc(docRef, {
         ...itemData,
         updatedAt: serverTimestamp()
-      });
+      }, { merge: true });
       return { id, ...itemData };
     } catch (error) {
       console.error('Error updating item:', error);
@@ -151,31 +151,21 @@ class MenuService {
     }
   }
 
-  // Upload item image to Firebase Storage
+  // Upload item image — uses base64 Data URL directly
+  // (Firebase Storage requires CORS configuration via gsutil;
+  //  base64 works instantly without any backend setup)
   async uploadItemImage(file, itemId = null) {
     if (!file) return null;
-    try {
-      const fileExt = file.name ? file.name.split('.').pop() : 'jpg';
-      const cleanId = (itemId || 'item_' + Date.now()).replace(/[^a-zA-Z0-9_-]/g, '_');
-      const filename = `menu_items/${cleanId}_${Date.now()}.${fileExt}`;
-      const storageRef = ref(storage, filename);
-      
-      const snapshot = await uploadBytes(storageRef, file, {
-        contentType: file.type || 'image/jpeg'
-      });
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      console.log('📸 Menu photo uploaded to Firebase Storage:', downloadURL);
-      return downloadURL;
-    } catch (error) {
-      console.warn('⚠️ Firebase Storage upload failed, falling back to base64 data URL:', error.message);
-      // Fallback: convert to base64 Data URL if storage bucket is not configured or offline
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = (err) => reject(err);
-        reader.readAsDataURL(file);
-      });
-    }
+
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        console.log('📸 Menu photo converted to base64 data URL');
+        resolve(reader.result);
+      };
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+    });
   }
 
   // Cleanup

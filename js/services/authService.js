@@ -21,6 +21,19 @@ class AuthService {
   constructor() {
     this.currentUser = null;
     this.staffData = null;
+
+    // Immediately hydrate from localStorage on construction
+    // This ensures staffData is available before onAuthStateChanged fires
+    try {
+      const storedStaff = localStorage.getItem('likha_staffData');
+      const storedUser = localStorage.getItem('likha_user');
+      if (storedStaff && storedUser) {
+        this.staffData = JSON.parse(storedStaff);
+        this.currentUser = JSON.parse(storedUser);
+      }
+    } catch (e) {
+      console.warn('localStorage hydration notice:', e);
+    }
   }
 
   // Login with email/password
@@ -33,10 +46,6 @@ class AuthService {
       const staffDoc = await getDoc(doc(db, 'staff', this.currentUser.uid));
       if (staffDoc.exists()) {
         this.staffData = { uid: this.currentUser.uid, ...staffDoc.data() };
-        await updateDoc(doc(db, 'staff', this.currentUser.uid), {
-          lastLogin: serverTimestamp()
-        });
-        return this.staffData;
       } else {
         // If auth user exists but no Firestore profile, create admin profile in Firestore
         const newProfile = {
@@ -61,8 +70,26 @@ class AuthService {
         };
         await setDoc(doc(db, 'staff', this.currentUser.uid), newProfile);
         this.staffData = { uid: this.currentUser.uid, ...newProfile };
-        return this.staffData;
       }
+      
+      // Persist to localStorage for refresh fallback - SYNCROUNOUS
+      try {
+        localStorage.setItem('likha_staffData', JSON.stringify(this.staffData));
+        localStorage.setItem('likha_user', JSON.stringify(this.currentUser));
+      } catch (e) {
+        console.warn('localStorage save notice:', e);
+      }
+      
+      // Update last login in Firestore
+      try {
+        await updateDoc(doc(db, 'staff', this.currentUser.uid), {
+          lastLogin: serverTimestamp()
+        });
+      } catch (e) {
+        console.warn('Firestore lastLogin update notice:', e);
+      }
+      
+      return this.staffData;
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -107,6 +134,38 @@ class AuthService {
 
   // Quick login with PIN via Firestore query
   async loginWithPIN(pin) {
+    // Check localStorage FIRST - synchronous, before any Firebase operations
+    // This handles refresh scenarios immediately
+    let storedStaff = null;
+    let storedUser = null;
+    
+    try {
+      storedStaff = localStorage.getItem('likha_staffData');
+      storedUser = localStorage.getItem('likha_user');
+    } catch (e) {
+      console.warn('localStorage read notice:', e);
+    }
+    
+    // If we have stored data from a previous login, restore it immediately
+    if (storedStaff && storedUser) {
+      try {
+        this.staffData = JSON.parse(storedStaff);
+        this.currentUser = JSON.parse(storedUser);
+        // Update lastLogin in Firestore background
+        try {
+          await updateDoc(doc(db, 'staff', this.staffData.uid), {
+            lastLogin: serverTimestamp()
+          });
+        } catch (e) {
+          console.warn('Firestore lastLogin update notice:', e);
+        }
+        return this.staffData;
+      } catch (e) {
+        console.warn('localStorage parse notice:', e);
+        // Fall through to Firestore login
+      }
+    }
+
     try {
       const q = query(
         collection(db, 'staff'),
@@ -118,6 +177,15 @@ class AuthService {
       if (!snapshot.empty) {
         const staffDoc = snapshot.docs[0];
         this.staffData = { uid: staffDoc.id, ...staffDoc.data() };
+        this.currentUser = { uid: staffDoc.id, name: staffDoc.data().name || 'Staff', email: staffDoc.data().email || '' };
+        
+        // Persist to localStorage for refresh fallback
+        try {
+          localStorage.setItem('likha_staffData', JSON.stringify(this.staffData));
+          localStorage.setItem('likha_user', JSON.stringify(this.currentUser));
+        } catch (e) {
+          console.warn('localStorage save notice:', e);
+        }
         
         await updateDoc(doc(db, 'staff', staffDoc.id), {
           lastLogin: serverTimestamp()
@@ -151,6 +219,12 @@ class AuthService {
             };
             const docRef = await addDoc(collection(db, 'staff'), newAdmin);
             this.staffData = { uid: docRef.id, ...newAdmin };
+            this.currentUser = { uid: docRef.id, name: 'Admin', email: 'admin@likhacafe.com', role: 'admin' };
+            
+            // Persist to localStorage for refresh fallback
+            localStorage.setItem('likha_staffData', JSON.stringify(this.staffData));
+            localStorage.setItem('likha_user', JSON.stringify(this.currentUser));
+            
             console.log('✅ Auto-created default Admin profile in Firestore staff collection');
             return this.staffData;
           }
@@ -172,6 +246,13 @@ class AuthService {
       await signOut(auth);
       this.currentUser = null;
       this.staffData = null;
+      // Clear localStorage
+      try {
+        localStorage.removeItem('likha_staffData');
+        localStorage.removeItem('likha_user');
+      } catch (e) {
+        console.warn('localStorage clear notice:', e);
+      }
       return true;
     } catch (error) {
       console.error('Logout error:', error);
@@ -193,30 +274,84 @@ class AuthService {
   // Auth state observer
   onAuthStateChange(callback) {
     return onAuthStateChanged(auth, async (user) => {
+      // Immediately check localStorage - this is the refresh fallback
+      const storedStaff = localStorage.getItem('likha_staffData');
+      const storedUser = localStorage.getItem('likha_user');
+
       if (user) {
         this.currentUser = user;
-        try {
-          const staffDoc = await getDoc(doc(db, 'staff', user.uid));
-          if (staffDoc.exists()) {
-            this.staffData = { uid: user.uid, ...staffDoc.data() };
-          } else {
-            this.staffData = {
-              uid: user.uid,
-              name: user.email?.split('@')[0] || 'Staff',
-              email: user.email,
-              role: 'admin'
-            };
+
+        // If we have localStorage data, restore from it FIRST (synchronously)
+        // Then fall through to Firestore fetch for synchronization
+        if (storedStaff && storedUser) {
+          // Restore from localStorage - this takes priority on refresh
+          this.staffData = JSON.parse(storedStaff);
+          // Update lastLogin in Firestore to keep it in sync
+          try {
+            await updateDoc(doc(db, 'staff', this.staffData.uid), {
+              lastLogin: serverTimestamp()
+            });
+          } catch (e) {
+            console.warn('Firestore lastLogin update notice:', e);
           }
-        } catch (error) {
-          console.error('Error fetching staff profile:', error);
+        } else {
+          // No localStorage - try to fetch from Firestore
+          try {
+            const staffDoc = await getDoc(doc(db, 'staff', user.uid));
+            if (staffDoc.exists()) {
+              this.staffData = { uid: user.uid, ...staffDoc.data() };
+            } else {
+              this.staffData = {
+                uid: user.uid,
+                name: user.email?.split('@')[0] || 'Staff',
+                email: user.email,
+                role: 'admin'
+              };
+            }
+          } catch (error) {
+            console.error('Error fetching staff profile:', error);
+            // Fallback to localStorage if Firestore fails
+            if (storedStaff) {
+              this.staffData = JSON.parse(storedStaff);
+            }
+          }
         }
+
+        // Persist to localStorage again
+        try {
+          localStorage.setItem('likha_staffData', JSON.stringify(this.staffData));
+          localStorage.setItem('likha_user', JSON.stringify(this.currentUser));
+        } catch (e) {
+          console.warn('localStorage save notice:', e);
+        }
+
         callback(this.staffData || null);
-      } else if (this.staffData) {
-        // Logged in via PIN
-        callback(this.staffData);
       } else {
+        // No Firebase Auth user — check if we have a PIN-based session in localStorage
+        const lsStaff = localStorage.getItem('likha_staffData');
+        const lsUser = localStorage.getItem('likha_user');
+
+        if (lsStaff && lsUser) {
+          // Restore PIN-based session from localStorage
+          try {
+            this.staffData = JSON.parse(lsStaff);
+            this.currentUser = JSON.parse(lsUser);
+            callback(this.staffData);
+            return; // Keep session alive, do NOT clear
+          } catch (e) {
+            console.warn('localStorage parse notice during restore:', e);
+          }
+        }
+
+        // Truly logged out — no Firebase user AND no localStorage session
         this.currentUser = null;
         this.staffData = null;
+        try {
+          localStorage.removeItem('likha_staffData');
+          localStorage.removeItem('likha_user');
+        } catch (e) {
+          console.warn('localStorage clear notice:', e);
+        }
         callback(null);
       }
     });

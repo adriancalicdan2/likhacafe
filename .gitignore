@@ -1,24 +1,14 @@
-# Environment Variables
-.env
-.env.local
-.env.*.local
+# Ignore environment files
+.env*
 
-# Operating System Files
-.DS_Store
-Thumbs.db
+# Ignore Firebase config injection (injected via window.__ENV__)
+# Do not commit local .env files
 
-# Dependencies
+# Ignore node_modules (if added later)
 node_modules/
-.npm/
 
-# IDE / Editor
-.vscode/
-.idea/
-.opencode/
-*.swp
-*.swo
-
-# Build & Logs
+# Ignore dist build artifacts if any
 dist/
-build/
-*.log
+
+# Ignore print confirm modal assets
+*.pdf
