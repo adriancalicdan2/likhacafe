@@ -125,6 +125,39 @@ function hideLoading() {
   }
 }
 
+function updatePortalUrl(page) {
+  try {
+    const isHtmlFile = window.location.pathname.endsWith('.html') || window.location.protocol === 'file:';
+    let targetPath = '';
+
+    if (!currentUser) {
+      targetPath = isHtmlFile ? 'login.html' : '/login';
+    } else {
+      const role = currentUser?.role || 'cashier';
+      const isAdminView = (page === 'admin' || page === 'analytics');
+
+      if (isAdminView) {
+        targetPath = isHtmlFile ? 'admin.html' : '/admin';
+      } else {
+        targetPath = isHtmlFile ? 'staff.html' : '/staff';
+      }
+    }
+
+    const currentFile = window.location.pathname.split('/').pop() || '';
+    const targetFile = targetPath.split('/').pop() || '';
+
+    if (currentFile !== targetFile) {
+      const url = new URL(window.location.href);
+      const basePath = url.pathname.substring(0, url.pathname.lastIndexOf('/') + 1);
+      url.pathname = isHtmlFile ? (basePath + targetFile) : targetPath;
+      url.search = '';
+      window.history.replaceState({ page: page || 'menu' }, '', url.toString());
+    }
+  } catch (e) {
+    console.warn('URL update notice:', e);
+  }
+}
+
 function showLogin() {
   hideLoading();
   const lScreen = document.getElementById('loginScreen') || loginScreen;
@@ -137,6 +170,7 @@ function showLogin() {
     mApp.classList.add('hidden');
     mApp.style.display = 'none';
   }
+  updatePortalUrl(null);
 }
 
 function getInitialPageForUser(user) {
@@ -191,6 +225,9 @@ function switchPage(page) {
     updateStoreSettingsUI();
   }
   if (page === 'analytics') updateAnalytics();
+
+  // Dynamically update URL in address bar (/staff or /admin)
+  updatePortalUrl(page);
 }
 
 function showMainApp(initialPage) {
