@@ -59,11 +59,14 @@ class StaffService {
   // Add a new staff member to Firestore
   async addStaff(staffData) {
     try {
+      if (!staffData.pin || staffData.pin.length !== 4) {
+        throw new Error('A 4-digit PIN is required for staff members.');
+      }
       const docRef = await addDoc(collection(db, this.collectionName), {
         name: staffData.name,
         email: staffData.email || '',
         role: staffData.role || 'cashier',
-        pin: staffData.pin || '1234',
+        pin: staffData.pin,
         isActive: staffData.isActive !== false,
         permissions: this.getDefaultPermissions(staffData.role || 'cashier'),
         createdAt: serverTimestamp(),

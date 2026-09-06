@@ -52,7 +52,7 @@ class AuthService {
           name: email.split('@')[0],
           email: email,
           role: 'admin',
-          pin: '1234',
+          pin: '',
           isActive: true,
           permissions: {
             canTakeOrders: true,
@@ -97,7 +97,7 @@ class AuthService {
   }
 
   // Register / Create new Admin account
-  async registerAdmin(name, email, password, pin = '1234') {
+  async registerAdmin(name, email, password, pin = '') {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       this.currentUser = userCredential.user;
@@ -106,7 +106,7 @@ class AuthService {
         name: name || email.split('@')[0],
         email: email,
         role: 'admin',
-        pin: pin || '1234',
+        pin: pin || '',
         isActive: true,
         permissions: {
           canTakeOrders: true,
@@ -193,46 +193,7 @@ class AuthService {
         
         return this.staffData;
       } else {
-        // Self-bootstrapping: If Firestore staff is empty and pin is 1234, create admin!
-        try {
-          const allStaffSnap = await getDocs(collection(db, 'staff'));
-          if (allStaffSnap.empty && pin === '1234') {
-            const newAdmin = {
-              name: 'Admin',
-              email: 'admin@likhacafe.com',
-              role: 'admin',
-              pin: '1234',
-              isActive: true,
-              permissions: {
-                canTakeOrders: true,
-                canProcessPayments: true,
-                canVoidOrders: true,
-                canViewOrders: true,
-                canEditMenu: true,
-                canManageStaff: true,
-                canViewReports: true,
-                canEditSettings: true
-              },
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp(),
-              lastLogin: serverTimestamp()
-            };
-            const docRef = await addDoc(collection(db, 'staff'), newAdmin);
-            this.staffData = { uid: docRef.id, ...newAdmin };
-            this.currentUser = { uid: docRef.id, name: 'Admin', email: 'admin@likhacafe.com', role: 'admin' };
-            
-            // Persist to localStorage for refresh fallback
-            localStorage.setItem('likha_staffData', JSON.stringify(this.staffData));
-            localStorage.setItem('likha_user', JSON.stringify(this.currentUser));
-            
-            console.log('✅ Auto-created default Admin profile in Firestore staff collection');
-            return this.staffData;
-          }
-        } catch (e) {
-          console.warn('Auto-admin notice:', e);
-        }
-
-        throw new Error('Invalid PIN. Use default PIN 1234 for initial login.');
+        throw new Error('Invalid PIN. Please enter a valid 4-digit PIN or sign in with your email account.');
       }
     } catch (error) {
       console.error('PIN login error:', error);

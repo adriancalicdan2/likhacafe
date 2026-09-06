@@ -1641,7 +1641,7 @@ function openStaffModal(staff = null) {
   document.getElementById('staffInputName').value = staff ? staff.name : '';
   document.getElementById('staffInputEmail').value = staff ? staff.email : '';
   document.getElementById('staffInputRole').value = staff ? staff.role : 'cashier';
-  document.getElementById('staffInputPin').value = staff ? staff.pin : '1234';
+  document.getElementById('staffInputPin').value = staff ? (staff.pin || '') : '';
   document.getElementById('staffInputActive').checked = staff ? staff.isActive !== false : true;
 
   if (title) {
@@ -1664,6 +1664,11 @@ async function saveStaff(e) {
     const role = document.getElementById('staffInputRole').value;
     const pin = document.getElementById('staffInputPin').value.trim();
     const isActive = document.getElementById('staffInputActive').checked;
+
+    if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+      showToast('Please enter a valid 4-digit numeric PIN.', 'error');
+      return;
+    }
 
     const payload = { name, email, role, pin, isActive };
 
