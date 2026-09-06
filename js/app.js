@@ -312,30 +312,10 @@ function updateStoreSettingsUI() {
   if (takeP) takeP.textContent = s.takeoutTaxRate !== undefined ? (s.takeoutTaxRate * 100).toFixed(0) : '5';
 }
 
-// ---------- Toast Notification ----------
+// ---------- Toast Notification (Disabled / Silent Logger) ----------
 function showToast(message, type = 'info') {
-  const container = document.getElementById('toastContainer');
-  if (!container) return;
-
-  const toast = document.createElement('div');
-  toast.className = `toast toast-${type}`;
-  
-  let icon = 'fa-info-circle';
-  if (type === 'success') icon = 'fa-check-circle';
-  if (type === 'error') icon = 'fa-exclamation-circle';
-
-  toast.innerHTML = `
-    <i class="fas ${icon}"></i>
-    <span>${message}</span>
-  `;
-
-  container.appendChild(toast);
-
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateY(10px)';
-    setTimeout(() => toast.remove(), 300);
-  }, 2800);
+  // Lower-right popups removed per user request. Feedback is displayed inline in forms/modals.
+  console.log(`[Likhā Café Notice] (${type}):`, message);
 }
 
 // ---------- Category Filter Pills ----------
@@ -807,8 +787,15 @@ function closeModal(modalId) {
 }
 
 function openCheckout() {
+  const chkErr = document.getElementById('checkoutPaymentError');
+  if (chkErr) { chkErr.style.display = 'none'; chkErr.textContent = ''; }
+
   if (cart.length === 0) {
-    showToast('Add items to cart first', 'error');
+    const cartEl = document.querySelector('.pos-cart-panel') || document.querySelector('.cart-items');
+    if (cartEl) {
+      cartEl.classList.add('shake-cart');
+      setTimeout(() => cartEl.classList.remove('shake-cart'), 500);
+    }
     return;
   }
 
@@ -935,13 +922,18 @@ async function completeOrder() {
 
     const paymentMethod = document.querySelector('.payment-btn.active')?.dataset.method || 'Cash';
     let amountPaid = parseFloat(document.getElementById('paymentAmount')?.value || 0);
+    const chkErr = document.getElementById('checkoutPaymentError');
+    if (chkErr) { chkErr.style.display = 'none'; chkErr.textContent = ''; }
     
     if (paymentMethod !== 'Cash' && (!amountPaid || amountPaid === 0)) {
       amountPaid = totals.total;
     }
 
     if (amountPaid < totals.total && paymentMethod === 'Cash') {
-      showToast('Amount received is less than total', 'error');
+      if (chkErr) {
+        chkErr.style.display = 'flex';
+        chkErr.innerHTML = '<i class="fas fa-exclamation-circle"></i> Amount received is less than total due.';
+      }
       return;
     }
 
@@ -993,7 +985,11 @@ async function completeOrder() {
 
   } catch (error) {
     console.error('Checkout error:', error);
-    showToast('Failed to complete order: ' + error.message, 'error');
+    const chkErr = document.getElementById('checkoutPaymentError');
+    if (chkErr) {
+      chkErr.style.display = 'flex';
+      chkErr.innerHTML = `<i class="fas fa-exclamation-circle"></i> Failed to complete order: ${error.message}`;
+    }
   }
 }
 
@@ -1202,6 +1198,8 @@ function openPaymentConfirmModal(order) {
 
   const payInput = document.getElementById('kioskPaymentAmount');
   const cashGroup = document.getElementById('kioskCashAmountGroup');
+  const kioskErr = document.getElementById('kioskPaymentError');
+  if (kioskErr) { kioskErr.style.display = 'none'; kioskErr.textContent = ''; }
   if (payInput) payInput.value = order.total;
   if (cashGroup) cashGroup.style.display = 'block';
 
@@ -1240,11 +1238,16 @@ async function submitKioskPaymentConfirmation() {
   const total = activeConfirmingOrder.total || 0;
   const method = document.querySelector('#kioskPaymentMethods .payment-btn.active')?.dataset.method || 'Cash';
   let amountPaid = parseFloat(document.getElementById('kioskPaymentAmount')?.value || 0);
+  const kioskErr = document.getElementById('kioskPaymentError');
+  if (kioskErr) { kioskErr.style.display = 'none'; kioskErr.textContent = ''; }
 
   if (method !== 'Cash') {
     amountPaid = total;
   } else if (amountPaid < total) {
-    showToast('Amount received is less than total due', 'error');
+    if (kioskErr) {
+      kioskErr.style.display = 'flex';
+      kioskErr.innerHTML = '<i class="fas fa-exclamation-circle"></i> Amount received is less than total due.';
+    }
     return;
   }
 
@@ -1284,7 +1287,11 @@ async function submitKioskPaymentConfirmation() {
     activeConfirmingOrder = null;
   } catch (err) {
     console.error('Error confirming kiosk payment:', err);
-    showToast('Failed to confirm payment: ' + err.message, 'error');
+    const kioskErr = document.getElementById('kioskPaymentError');
+    if (kioskErr) {
+      kioskErr.style.display = 'flex';
+      kioskErr.innerHTML = `<i class="fas fa-exclamation-circle"></i> Failed to confirm payment: ${err.message}`;
+    }
   }
 }
 
@@ -1415,6 +1422,9 @@ function openItemModal(item = null) {
     if (previewContainer) previewContainer.classList.add('hidden');
   }
 
+  const itemErr = document.getElementById('itemModalError');
+  if (itemErr) { itemErr.style.display = 'none'; itemErr.textContent = ''; }
+
   if (title) {
     title.innerHTML = item ? `<i class="fas fa-edit"></i> Edit Menu Item` : `<i class="fas fa-plus"></i> Add Menu Item`;
   }
@@ -1424,14 +1434,22 @@ function openItemModal(item = null) {
 
 function handlePhotoFileSelect(file) {
   if (!file) return;
+  const itemErr = document.getElementById('itemModalError');
   if (!file.type.startsWith('image/')) {
-    showToast('Please select a valid image file (JPG, PNG, WebP)', 'error');
+    if (itemErr) {
+      itemErr.style.display = 'flex';
+      itemErr.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please select a valid image file (JPG, PNG, WebP).';
+    }
     return;
   }
   if (file.size > 5 * 1024 * 1024) {
-    showToast('Image size exceeds 5MB limit', 'error');
+    if (itemErr) {
+      itemErr.style.display = 'flex';
+      itemErr.innerHTML = '<i class="fas fa-exclamation-circle"></i> Image size exceeds 5MB limit.';
+    }
     return;
   }
+  if (itemErr) { itemErr.style.display = 'none'; itemErr.textContent = ''; }
 
   pendingItemPhotoFile = file;
   const dropzone = document.getElementById('itemPhotoDropzone');
@@ -1535,7 +1553,11 @@ async function saveItem(e) {
     closeItemModal();
   } catch (error) {
     console.error('Error saving item:', error);
-    showToast('Failed to save item: ' + error.message, 'error');
+    const itemErr = document.getElementById('itemModalError');
+    if (itemErr) {
+      itemErr.style.display = 'flex';
+      itemErr.innerHTML = `<i class="fas fa-exclamation-circle"></i> Failed to save item: ${error.message}`;
+    }
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;
@@ -1644,6 +1666,9 @@ function openStaffModal(staff = null) {
   document.getElementById('staffInputPin').value = staff ? (staff.pin || '') : '';
   document.getElementById('staffInputActive').checked = staff ? staff.isActive !== false : true;
 
+  const staffErr = document.getElementById('staffModalError');
+  if (staffErr) { staffErr.style.display = 'none'; staffErr.textContent = ''; }
+
   if (title) {
     title.innerHTML = staff ? `<i class="fas fa-user-edit"></i> Edit Staff Account` : `<i class="fas fa-user-plus"></i> Add Staff Account`;
   }
@@ -1665,8 +1690,14 @@ async function saveStaff(e) {
     const pin = document.getElementById('staffInputPin').value.trim();
     const isActive = document.getElementById('staffInputActive').checked;
 
+    const staffErr = document.getElementById('staffModalError');
+    if (staffErr) { staffErr.style.display = 'none'; staffErr.textContent = ''; }
+
     if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
-      showToast('Please enter a valid 4-digit numeric PIN.', 'error');
+      if (staffErr) {
+        staffErr.style.display = 'flex';
+        staffErr.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please enter a valid 4-digit numeric PIN.';
+      }
       return;
     }
 
@@ -1683,7 +1714,11 @@ async function saveStaff(e) {
     closeStaffModal();
   } catch (error) {
     console.error('Error saving staff:', error);
-    showToast('Failed to save staff: ' + error.message, 'error');
+    const staffErr = document.getElementById('staffModalError');
+    if (staffErr) {
+      staffErr.style.display = 'flex';
+      staffErr.innerHTML = `<i class="fas fa-exclamation-circle"></i> Failed to save staff: ${error.message}`;
+    }
   }
 }
 
@@ -1737,10 +1772,19 @@ async function saveStoreSettings(e) {
     updateStoreSettingsUI();
     updateCartUI();
 
-    showToast('Store settings saved to Firestore!', 'success');
+    const statusEl = document.getElementById('settingsSaveStatus');
+    if (statusEl) {
+      statusEl.className = 'inline-save-feedback success';
+      statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Settings saved to Firestore!';
+      setTimeout(() => { if (statusEl) statusEl.innerHTML = ''; }, 3500);
+    }
   } catch (error) {
     console.error('Error updating settings:', error);
-    showToast('Failed to save settings: ' + error.message, 'error');
+    const statusEl = document.getElementById('settingsSaveStatus');
+    if (statusEl) {
+      statusEl.className = 'inline-save-feedback error';
+      statusEl.innerHTML = `<i class="fas fa-exclamation-circle"></i> Failed to save: ${error.message}`;
+    }
   }
 }
 
@@ -2015,43 +2059,98 @@ function setupEventListeners() {
     });
   });
 
+  // Email & PIN Login Handlers
   document.getElementById('emailLogin')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = document.getElementById('loginEmail').value;
+    const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
+    const btn = document.getElementById('emailLoginBtn') || e.target.querySelector('button[type="submit"]');
+    const errEl = document.getElementById('emailLoginError');
+    if (errEl) { errEl.style.display = 'none'; errEl.innerHTML = ''; }
+
     try {
-      showToast('Authenticating with Firebase...', 'info');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
+      }
       currentUser = await authService.login(email, password);
-      showToast(`Welcome, ${currentUser?.name || 'Staff'}!`, 'success');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+      }
       showMainApp();
       loadMenu();
       initOrders();
       loadStaff();
       updateStaffInfo();
     } catch (error) {
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
-        showToast('Account not found! Click the "Register Admin" tab to create your account first.', 'error');
-      } else {
-        showToast('Login failed: ' + error.message, 'error');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+      }
+      if (errEl) {
+        errEl.style.display = 'flex';
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+          errEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> Incorrect email or password.';
+        } else {
+          errEl.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message || 'Login failed'}`;
+        }
       }
     }
   });
 
   document.getElementById('pinLogin')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const pin = document.getElementById('loginPin').value;
+    const pin = document.getElementById('loginPin').value.trim();
+    const btn = document.getElementById('pinLoginBtn') || e.target.querySelector('button[type="submit"]');
+    const errEl = document.getElementById('pinLoginError');
+    if (errEl) { errEl.style.display = 'none'; errEl.innerHTML = ''; }
+
+    if (!pin || pin.length !== 4) {
+      if (errEl) {
+        errEl.style.display = 'flex';
+        errEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please enter your 4-digit PIN.';
+      }
+      return;
+    }
+
     try {
-      showToast('Verifying PIN in Firestore...', 'info');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+      }
       currentUser = await authService.loginWithPIN(pin);
-      showToast(`Logged in as ${currentUser?.name} (${currentUser?.role})`, 'success');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-key"></i> Quick Login';
+      }
       showMainApp();
       loadMenu();
       initOrders();
       loadStaff();
       updateStaffInfo();
     } catch (error) {
-      showToast(error.message, 'error');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-key"></i> Quick Login';
+      }
+      if (errEl) {
+        errEl.style.display = 'flex';
+        errEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> Incorrect PIN. Please try again.';
+      }
     }
+  });
+
+  // Clear inline errors immediately when typing in login inputs
+  ['loginEmail', 'loginPassword'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', () => {
+      const errEl = document.getElementById('emailLoginError');
+      if (errEl) { errEl.style.display = 'none'; errEl.innerHTML = ''; }
+    });
+  });
+  document.getElementById('loginPin')?.addEventListener('input', () => {
+    const errEl = document.getElementById('pinLoginError');
+    if (errEl) { errEl.style.display = 'none'; errEl.innerHTML = ''; }
   });
 
   // Logout
@@ -2060,7 +2159,6 @@ function setupEventListeners() {
       await authService.logout();
       currentUser = null;
       showLogin();
-      showToast('Logged out', 'info');
     }
   });
 }

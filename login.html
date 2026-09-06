@@ -83,11 +83,16 @@
                             target.classList.add('active');
                             target.style.display = 'block';
                         }
+                        var eErr = document.getElementById('emailLoginError');
+                        var pErr = document.getElementById('pinLoginError');
+                        if (eErr) { eErr.style.display = 'none'; eErr.innerHTML = ''; }
+                        if (pErr) { pErr.style.display = 'none'; pErr.innerHTML = ''; }
                     }
                 </script>
 
                 <!-- Email Login -->
                 <form id="emailLogin" class="login-form active">
+                    <div id="emailLoginError" class="login-inline-error" style="display: none;"></div>
                     <div class="form-group">
                         <label><i class="fas fa-envelope"></i> Email</label>
                         <input type="email" id="loginEmail" placeholder="admin@likhacafe.com" required>
@@ -96,18 +101,19 @@
                         <label><i class="fas fa-lock"></i> Password</label>
                         <input type="password" id="loginPassword" placeholder="••••••••" required>
                     </div>
-                    <button type="submit" class="btn-primary btn-block">
+                    <button type="submit" id="emailLoginBtn" class="btn-primary btn-block">
                         <i class="fas fa-sign-in-alt"></i> Sign In
                     </button>
                 </form>
 
                 <!-- PIN Login -->
                 <form id="pinLogin" class="login-form">
+                    <div id="pinLoginError" class="login-inline-error" style="display: none;"></div>
                     <div class="form-group">
                         <label><i class="fas fa-key"></i> Staff PIN</label>
                         <input type="password" id="loginPin" placeholder="Enter 4-digit PIN" maxlength="4" inputmode="numeric" autocomplete="current-password">
                     </div>
-                    <button type="submit" class="btn-primary btn-block">
+                    <button type="submit" id="pinLoginBtn" class="btn-primary btn-block">
                         <i class="fas fa-key"></i> Quick Login
                     </button>
                 </form>
@@ -421,9 +427,12 @@
                                             <label>Operating Hours</label>
                                             <input type="text" id="settingHours" value="Tue-Sun, 10:00 AM - 2:00 AM">
                                         </div>
-                                        <button type="submit" class="btn-primary">
-                                            <i class="fas fa-save"></i> Save Settings to Firestore
-                                        </button>
+                                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 1rem;">
+                                            <button type="submit" id="saveSettingsBtn" class="btn-primary">
+                                                <i class="fas fa-save"></i> Save Settings to Firestore
+                                            </button>
+                                            <span id="settingsSaveStatus" class="inline-save-feedback"></span>
+                                        </div>
                                     </form>
                                 </div>
                             </div>
@@ -506,6 +515,7 @@
                 </div>
                 <form id="itemForm">
                     <div class="modal-body">
+                        <div id="itemModalError" class="modal-inline-error" style="display: none;"></div>
                         <input type="hidden" id="itemId">
                         <input type="hidden" id="itemExistingImageUrl">
 
@@ -617,6 +627,7 @@
                 </div>
                 <form id="staffForm">
                     <div class="modal-body">
+                        <div id="staffModalError" class="modal-inline-error" style="display: none;"></div>
                         <input type="hidden" id="staffId">
                         <div class="form-group">
                             <label>Full Name *</label>
@@ -692,6 +703,7 @@
                                 <input type="number" id="paymentAmount" placeholder="0.00" step="1" min="0">
                             </div>
                             <div class="quick-amounts" id="quickAmounts"></div>
+                            <div id="checkoutPaymentError" class="modal-inline-error" style="display: none; margin-top: 0.5rem;"></div>
                             <div class="change-display">
                                 <span>Change: <strong id="changeAmount">₱0.00</strong></span>
                             </div>
@@ -754,6 +766,7 @@
                             <span>Change Due:</span>
                             <span id="kioskChangeAmount" style="color: var(--success);">₱0.00</span>
                         </div>
+                        <div id="kioskPaymentError" class="modal-inline-error" style="display: none; margin-top: 0.5rem;"></div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -800,8 +813,6 @@
             </div>
         </div>
 
-        <!-- Toast Notification -->
-        <div id="toastContainer" class="toast-container"></div>
     </div>
 
     <!-- Scripts -->

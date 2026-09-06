@@ -2120,39 +2120,62 @@ select {
   gap: 0.25rem;
 }
 
-/* Toast Container */
+/* Inline Feedback & Errors (Replaces Lower-Right Popups) */
 .toast-container {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  z-index: 10000;
-  pointer-events: none;
+  display: none !important;
 }
 
-.toast {
-  background: var(--brown-900);
-  color: var(--white);
-  padding: 0.75rem 1.25rem;
-  border-radius: var(--radius-sm);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-  font-size: 0.9rem;
+.login-inline-error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #ef4444;
+  padding: 0.65rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 500;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  animation: slideIn 0.3s ease-out;
-  pointer-events: auto;
+  margin-bottom: 0.85rem;
+  animation: fadeInInline 0.2s ease;
 }
 
-.toast.success { background: var(--success); }
-.toast.error { background: var(--danger); }
-.toast.info { background: var(--brown-700); }
+.modal-inline-error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #ef4444;
+  padding: 0.6rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  animation: fadeInInline 0.2s ease;
+}
 
-@keyframes slideIn {
-  from { transform: translateX(100%); opacity: 1; }
-  to { transform: translateX(0); opacity: 1; }
+.inline-save-feedback {
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.3s ease;
+}
+.inline-save-feedback.success {
+  color: #10b981;
+}
+.inline-save-feedback.error {
+  color: #ef4444;
+}
+.inline-save-feedback.info {
+  color: var(--yellow-600, #d97706);
+}
+
+@keyframes fadeInInline {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* Form Row Helper */
